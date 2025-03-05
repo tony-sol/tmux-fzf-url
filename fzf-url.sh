@@ -4,20 +4,32 @@
 #    Email: wenxuangm@gmail.com
 #  Created: 2018-04-06 12:12
 #===============================================================================
-get_fzf_options() {
+get_fzf_with_options() {
+    local fzf_bin
+    local fzf_default_options
+    # @see https://junegunn.github.io/fzf/releases/0.53.0/#native-tmux-integration
+    local fzf_desired_version='0.53.0'
+    local fzf_actual_version=$(fzf --version | awk '{print $1}')zf_actual_version=$(fzf --version | awk '{print $1}')
+    if [ "$fzf_desired_version" = $(echo -e "$fzf_desired_version\n$fzf_actual_version" | sort -V | head -n1) ]; then
+        fzf_bin='fzf'
+        fzf_default_options='--tmux center,100%,50% --multi --exit-0 --no-preview'
+    else
+        fzf_bin='fzf-tmux'
+        fzf_default_options='-w 100% -h 50% --multi -0 --no-preview'
+    fi
+
     local fzf_options
-    local fzf_default_options='-w 100% -h 50% --multi -0 --no-preview'
     fzf_options="$(tmux show -gqv '@fzf-url-fzf-options')"
-    [ -n "$fzf_options" ] && echo "$fzf_options" || echo "$fzf_default_options"
+    echo "$fzf_bin $([ -n "$fzf_options" ] && echo "$fzf_options" || echo "$fzf_default_options")"
 }
 
 fzf_filter() {
-  eval "fzf-tmux $(get_fzf_options)"
+    eval "$(get_fzf_with_options)"
 }
 
 custom_open=$3
 open_url() {
-    if [[ -n $custom_open ]]; then 
+    if [[ -n $custom_open ]]; then
         $custom_open "$@"
     elif hash xdg-open &>/dev/null; then
         nohup xdg-open "$@"
